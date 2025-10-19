@@ -1,0 +1,13 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Resultado</title></head>
+<body>
+  <h1>Resultado de la declaración</h1>
+  <p>Sujeto: {{ declaracion.sujeto.nombre }} ({{ declaracion.sujeto.nif }})</p>
+  <p>Ejercicio: {{ declaracion.ejercicio }}</p>
+  <p>Periodo: {{ declaracion.periodo }}</p>
+  <p>Total operadores: {{ declaracion.total_operadores }}</p>
+  <p>Total base imponible: {{ declaracion.total_base_imponible }}</p>
+  <a href="{% url 'home' %}">Crear otra</a>
+</body>
+</html>

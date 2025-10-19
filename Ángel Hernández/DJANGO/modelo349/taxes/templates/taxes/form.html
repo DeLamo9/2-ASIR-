@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Crear Declaración Modelo 349</title>
+</head>
+<body>
+  <h1>Crear Declaración (Modelo 349)</h1>
+  <form method="post">
+    {% csrf_token %}
+    <fieldset>
+      <legend>Sujeto pasivo</legend>
+      {{ sujeto_form.as_p }}
+    </fieldset>
+    <fieldset>
+      <legend>Declaración</legend>
+      {{ decl_form.as_p }}
+    </fieldset>
+    <fieldset>
+      <legend>Operadores (añade las líneas)</legend>
+      {{ formset.management_form }}
+      {% for f in formset %}
+        <div style="border:1px solid #ddd; padding:8px; margin-bottom:8px;">
+          {{ f.as_p }}
+        </div>
+      {% endfor %}
+      <p>Usa + (en JS) si implementas añadir dinámico. Por ahora cambia el valor de extra en formset en forms.py</p>
+    </fieldset>
+    <button type="submit">Guardar declaración</button>
+  </form>
+</body>
+</html>
