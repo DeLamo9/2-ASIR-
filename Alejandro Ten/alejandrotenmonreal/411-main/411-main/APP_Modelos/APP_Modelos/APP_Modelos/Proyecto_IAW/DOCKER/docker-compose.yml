@@ -1,0 +1,63 @@
+﻿services:
+  db:
+    image: postgres:16
+    container_name: docker-db-1
+    environment:
+      POSTGRES_DB: proyecto
+      POSTGRES_USER: proyecto
+      POSTGRES_PASSWORD: proyecto
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./sql/20_outbox.sql:/docker-entrypoint-initdb.d/20_outbox.sql:ro
+    healthcheck:
+     test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+     interval: 5s
+     timeout: 3s
+     retries: 20
+
+
+  web:
+    build:
+      context: ..
+      dockerfile: DOCKER/Dockerfile
+    container_name: docker-web-1
+    working_dir: /app
+    environment:
+      POSTGRES_DB: proyecto
+      POSTGRES_USER: proyecto
+      POSTGRES_PASSWORD: proyecto
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  sender:
+    image: python:3.11-slim
+    container_name: docker-sender-1
+    working_dir: /app
+    volumes:
+      - .:/app                 # <-- aquí está sender.py y requirements.txt
+    environment:
+      IMP411_ENDPOINT: http://172.20.10.12:8000/api/impuestos
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: proyecto
+      POSTGRES_USER: proyecto
+      POSTGRES_PASSWORD: proyecto
+      IMP411_INTERVAL_SEC: "15"
+      IMP411_BATCH: "100"
+
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    command: ["sh","-lc","pip install --no-cache-dir -r /app/requirements.txt || pip install --no-cache-dir psycopg2-binary requests; exec python -u /app/sender.py"]
+
+
+volumes:
+  pgdata:

@@ -1,0 +1,28 @@
+docker compose exec -it db psql -U proyecto -d proyecto
+
+Crear  trigger
+
+CREATE OR REPLACE FUNCTION imp411.fn_capture_formulario411()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO imp411.impuesto_outbox_raw (cif_empresa, nif_cliente, numero_impuesto, datos)
+  VALUES (
+    NEW.cif,
+    NEW.nif,
+    411,
+    jsonb_build_object(
+      'id', NEW.id,
+      'nif', NEW.nif,
+      'iban', NEW.iban,
+      'cif', NEW.cif,
+      'año', NEW."año",
+      'base_imponible', NEW.base_imponible,
+      'cuota_tributaria', NEW.cuota_tributaria,
+      'importe_ingresar', NEW.importe_ingresar,
+      'territorio', NEW.territorio,
+      'fecha_creacion', NEW.fecha_creacion
+    )
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;

@@ -1,0 +1,13 @@
+Crear el trigger sobre la tabla
+
+DROP TRIGGER IF EXISTS trg_formulario411_after_insert ON public."Impuesto_411_formulario411";
+
+CREATE TRIGGER trg_formulario411_after_insert
+AFTER INSERT ON public."Impuesto_411_formulario411"
+FOR EACH ROW
+EXECUTE FUNCTION imp411.fn_capture_formulario411();
+
+-- Verifica
+SELECT tgname
+FROM pg_trigger
+WHERE tgrelid = 'public."Impuesto_411_formulario411"'::regclass;

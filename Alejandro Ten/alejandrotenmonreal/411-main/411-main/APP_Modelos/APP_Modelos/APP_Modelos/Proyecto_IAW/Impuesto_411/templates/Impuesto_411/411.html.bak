@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Modelo 411 - Impuesto sobre los Depósitos</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f2f2f2; margin: 0; padding: 20px; }
+  .container { max-width: 600px; margin: auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  h1, h2 { text-align: center; color: #333; }
+  .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+  .field-group { display: flex; flex-wrap: wrap; gap: 16px; }
+  .field { flex: 1 1 200px; display: flex; flex-direction: column; }
+  label { font-weight: bold; margin-bottom: 5px; color: #444; }
+  input, select { padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+  button { display: block; margin: 30px auto 0; padding: 12px 30px; font-size: 16px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background 0.3s; }
+  button:hover { background: #0056b3; }
+  .alert { margin-top: 20px; padding: 12px; border-radius: 6px; font-size: 15px; }
+  .success { background: #d4edda; color: #155724; }
+  .error { background: #f8d7da; color: #721c24; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Modelo 411 — ONLINE</h1>
+  <form id="form411">
+
+    <!-- Identificación -->
+    <div class="section">
+      <h2>Identificación</h2>
+      <div class="field-group">
+        <div class="field">
+          <label for="nif">NIF</label>
+          <input type="text" id="nif" name="nif" required>
+        </div>
+        <div class="field">
+          <label for="iban">IBAN</label>
+          <input type="text" id="iban" name="iban" required>
+        </div>
+        <div class="field">
+          <label for="año">Año</label>
+          <input type="number" id="año" name="año" required>
+        </div>
+        <div class="field">
+          <label for="cif">CIF Empresa</label>
+          <input type="text" id="cif" name="cif" required>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ingreso y territorio -->
+    <div class="section">
+      <h2>Ingreso y Territorio</h2>
+      <div class="field-group">
+        <div class="field">
+          <label for="base">Base imponible (€)</label>
+          <input type="number" step="0.01" id="base" name="base_imponible" required>
+        </div>
+        <div class="field">
+          <label for="territorio">Comunidad Autónoma</label>
+          <select id="territorio" name="territorio" required>
+            <option value="">-- Selecciona una comunidad --</option>
+            <option value="Andalucía">Andalucía</option>
+            <option value="Aragón">Aragón</option>
+            <option value="Asturias">Asturias</option>
+            <option value="Islas Baleares">Islas Baleares</option>
+            <option value="Canarias">Canarias</option>
+            <option value="Cantabria">Cantabria</option>
+            <option value="Castilla-La Mancha">Castilla-La Mancha</option>
+            <option value="Castilla y León">Castilla y León</option>
+            <option value="Cataluña">Cataluña</option>
+            <option value="Comunidad Valenciana">Comunidad Valenciana</option>
+            <option value="Extremadura">Extremadura</option>
+            <option value="Galicia">Galicia</option>
+            <option value="Comunidad de Madrid">Comunidad de Madrid</option>
+            <option value="Región de Murcia">Región de Murcia</option>
+            <option value="Navarra">Navarra</option>
+            <option value="País Vasco">País Vasco</option>
+            <option value="La Rioja">La Rioja</option>
+            <option value="Ceuta">Ceuta</option>
+            <option value="Melilla">Melilla</option>
+            <option value="No presencial">No presencial</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campos ocultos calculados -->
+    <input type="hidden" id="cuota" name="cuota_tributaria">
+    <input type="hidden" id="importe_ingresar" name="importe_ingresar">
+
+    <button type="submit">Enviar</button>
+    <div id="msg"></div>
+  </form>
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("form411");
+  const baseEl = document.getElementById("base");
+  const cuotaEl = document.getElementById("cuota");
+  const importeEl = document.getElementById("importe_ingresar");
+  const msgDiv = document.getElementById("msg");
+  const tipo = 0.003;
+
+  function showMsg(text, ok=true) {
+    msgDiv.textContent = text;
+    msgDiv.className = "alert " + (ok ? "success" : "error");
+  }
+
+  function recalcular() {
+    const base = parseFloat(baseEl.value) || 0;
+    const cuota = base * tipo;
+    cuotaEl.value = cuota.toFixed(2);
+    importeEl.value = cuota.toFixed(2);
+  }
+  baseEl.addEventListener("input", recalcular);
+  document.getElementById("territorio").addEventListener("change", recalcular);
+  recalcular();
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const data = {
+      nif: document.getElementById("nif").value.trim(),
+      iban: document.getElementById("iban").value.trim(),
+      año: document.getElementById("año").value.trim(),   // tu modelo usa "año" (Char)
+      cif: document.getElementById("cif").value.trim(),
+      base_imponible: (document.getElementById("base").value || "0").toString(),
+      territorio: document.getElementById("territorio").value
+      // ⚠️ Solo envía estos si EXISTEN en tu modelo:
+      // cuota_tributaria: (document.getElementById("cuota").value || "0").toString(),
+      // importe_ingresar: (document.getElementById("importe_ingresar").value || "0").toString()
+    };
+
+    try {
+      const res = await fetch("/api/impuesto411/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      const text = await res.text(); // leemos como texto primero
+      let json;
+      try { json = JSON.parse(text); } catch { json = null; }
+
+      // Éxito (nuestro backend devuelve { ok: true, id: ... })
+      if (res.ok && json && json.ok) {
+        showMsg("✅ Guardado correctamente (ID " + json.id + ")", true);
+        form.reset();
+        recalcular();
+        return;
+      }
+
+      // Error con JSON
+      if (json) {
+        const msg = json.error || json.message || "Error en el servidor";
+        showMsg("❌ Error (" + res.status + "): " + msg, false);
+      } else {
+        // No vino JSON (probable HTML de error)
+        showMsg("❌ Error (" + res.status + "): respuesta no válida", false);
+        console.error("Respuesta no JSON:", text);
+      }
+    } catch (err) {
+      console.error(err);
+      showMsg("❌ Error de red o CORS", false);
+    }
+  });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Modelo 411 - Impuesto sobre Depósitos</title>
+  <style>
+    :root { --bg:#f2f2f2; --fg:#333; --card:#fff; --muted:#444; --b:#ddd; --ok:#155724; --okbg:#d4edda; --err:#721c24; --errbg:#f8d7da; --brand:#007bff; --brandh:#0056b3; }
+    *{box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);margin:0;padding:24px}
+    .container{max-width:760px;margin:auto;background:var(--card);padding:28px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+    h1,h2{color:var(--fg);text-align:center;margin:0 0 16px}
+    .section{margin:20px 0;padding:16px;border:1px solid var(--b);border-radius:10px}
+    .section h2{font-size:1.1rem;margin-bottom:12px}
+    .field-group{display:flex;flex-wrap:wrap;gap:16px}
+    .field{flex:1 1 220px;display:flex;flex-direction:column}
+    label{font-weight:600;margin-bottom:6px;color:var(--muted)}
+    input,select{padding:10px;border:1px solid #ccc;border-radius:8px;font-size:14px}
+    button{display:block;margin:26px auto 0;padding:12px 30px;font-size:16px;background:var(--brand);color:#fff;border:none;border-radius:10px;cursor:pointer;transition:background .2s}
+    button:hover{background:var(--brandh)}
+    .alert{margin-top:18px;padding:12px;border-radius:8px;font-size:15px}
+    .success{background:var(--okbg);color:var(--ok)}
+    .error{background:var(--errbg);color:var(--err)}
+    .help{font-size:12px;color:#666;margin-top:6px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Modelo 411 — ONLINE</h1>
+
+    <form id="form411" novalidate>
+      <!-- Identificación -->
+      <div class="section">
+        <h2>Identificación</h2>
+        <div class="field-group">
+          <div class="field">
+            <label for="nif">NIF</label>
+            <input type="text" id="nif" name="nif" required
+                   placeholder="12345678Z"
+                   pattern="^[0-9XYZxyz][0-9]{7}[A-Za-z]$" />
+            <div class="help">Formato típico DNI/NIE: 12345678Z</div>
+          </div>
+
+          <div class="field">
+            <label for="iban">IBAN</label>
+            <input type="text" id="iban" name="iban" required
+                   placeholder="ES12 3456 7890 1234 5678 9012"
+                   pattern="^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$" />
+            <div class="help">Ej.: ES12… (sin espacios o se aceptan, se limpian)</div>
+          </div>
+
+          <div class="field">
+            <label for="anio">Año</label>
+            <input type="number" id="anio" name="año" required min="2000" max="2100" placeholder="2025" />
+          </div>
+
+          <div class="field">
+            <label for="cif">CIF Empresa</label>
+            <input type="text" id="cif" name="cif" required placeholder="A12345678"
+                   pattern="^[ABCDEFGHJKLMNPQRSUVW][0-9]{7}[0-9A-J]$" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Ingreso y territorio -->
+      <div class="section">
+        <h2>Ingreso y Territorio</h2>
+        <div class="field-group">
+          <div class="field">
+            <label for="base">Base imponible (€)</label>
+            <input type="number" step="0.01" min="0" id="base" name="base_imponible" required placeholder="0.00" />
+            <div class="help">La cuota se calcula al 0,3% automáticamente.</div>
+          </div>
+
+          <div class="field">
+            <label for="territorio">Comunidad Autónoma</label>
+            <select id="territorio" name="territorio" required>
+              <option value="">-- Selecciona una comunidad --</option>
+              <option>Andalucía</option>
+              <option>Aragón</option>
+              <option>Asturias</option>
+              <option>Islas Baleares</option>
+              <option>Canarias</option>
+              <option>Cantabria</option>
+              <option>Castilla-La Mancha</option>
+              <option>Castilla y León</option>
+              <option>Cataluña</option>
+              <option>Comunidad Valenciana</option>
+              <option>Extremadura</option>
+              <option>Galicia</option>
+              <option>Comunidad de Madrid</option>
+              <option>Región de Murcia</option>
+              <option>Navarra</option>
+              <option>País Vasco</option>
+              <option>La Rioja</option>
+              <option>Ceuta</option>
+              <option>Melilla</option>
+              <option>No presencial</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Campos ocultos calculados (actívalos si existen en tu modelo) -->
+      <!--
+      <input type="hidden" id="cuota" name="cuota_tributaria" />
+      <input type="hidden" id="importe_ingresar" name="importe_ingresar" />
+      -->
+
+      <button type="submit">Enviar</button>
+      <div id="msg" aria-live="polite"></div>
+    </form>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("form411");
+      const baseEl = document.getElementById("base");
+      const msgDiv = document.getElementById("msg");
+      const tipo = 0.003; // 0,3%
+
+      // Utilidades
+      const cleanIban = (s) => s.replace(/\s+/g, "").toUpperCase();
+      const showMsg = (text, ok = true) => {
+        msgDiv.textContent = text;
+        msgDiv.className = "alert " + (ok ? "success" : "error");
+      };
+
+      function recalcular() {
+        const base = parseFloat(baseEl.value) || 0;
+        const cuota = base * tipo;
+        // Si decides enviar estos campos, descomenta y añade inputs ocultos:
+        // document.getElementById("cuota").value = cuota.toFixed(2);
+        // document.getElementById("importe_ingresar").value = cuota.toFixed(2);
+      }
+
+      baseEl.addEventListener("input", recalcular);
+      document.getElementById("territorio").addEventListener("change", recalcular);
+      recalcular();
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        // Validación HTML5 rápida
+        if (!form.reportValidity()) {
+          showMsg("❌ Revisa los campos resaltados.", false);
+          return;
+        }
+
+        const nif = document.getElementById("nif").value.trim().toUpperCase();
+        const iban = cleanIban(document.getElementById("iban").value);
+        const anio = document.getElementById("anio").value.trim();
+        const cif  = document.getElementById("cif").value.trim().toUpperCase();
+        const base_imponible = (document.getElementById("base").value || "0").toString();
+        const territorio = document.getElementById("territorio").value;
+
+        const data = {
+          nif,
+          iban,
+          "año": anio,          // tu modelo usa "año" (Char)
+          cif,
+          base_imponible,
+          territorio
+          // Si tu modelo tiene estos campos, descoméntalos y añade inputs ocultos arriba:
+          // cuota_tributaria: (document.getElementById("cuota").value || "0").toString(),
+          // importe_ingresar: (document.getElementById("importe_ingresar").value || "0").toString()
+        };
+
+        try {
+          const res = await fetch("/api/impuesto411/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+            credentials: "same-origin"
+          });
+
+          const text = await res.text();
+          let json = null;
+          try { json = JSON.parse(text); } catch { /* podría ser HTML de error */ }
+
+          if (res.ok && json && (json.ok === true || json.success === true)) {
+            showMsg("✅ Guardado correctamente (ID " + (json.id ?? "—") + ")", true);
+            form.reset();
+            recalcular();
+            return;
+          }
+
+          if (json) {
+            const msg = json.error || json.message || "Error en el servidor";
+            showMsg("❌ Error (" + res.status + "): " + msg, false);
+          } else {
+            showMsg("❌ Error (" + res.status + "): respuesta no válida (no JSON)", false);
+            console.error("Respuesta no JSON:", text);
+          }
+        } catch (err) {
+          console.error(err);
+          showMsg("❌ Error de red o CORS", false);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
