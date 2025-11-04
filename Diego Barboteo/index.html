@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enviar Impuesto - API</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background-color: #f4f6f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      width: 400px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    label {
+      font-weight: 600;
+      margin-top: 10px;
+      display: block;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    button {
+      margin-top: 15px;
+      width: 100%;
+      background-color: #0078D7;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #005fa3;
+    }
+    pre {
+      background: #f1f1f1;
+      padding: 10px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Enviar Impuesto</h2>
+
+    <label>Número de impuesto</label>
+    <input type="text" id="numero_impuesto" placeholder="Ej: IMP2025-01" required>
+
+    <label>CIF Empresa</label>
+    <input type="text" id="cif_empresa" placeholder="Ej: B12345678" required>
+
+    <label>NIF Cliente</label>
+    <input type="text" id="nif_cliente" placeholder="Ej: 12345678A" required>
+
+    <label>Datos (JSON)</label>
+    <textarea id="datos" rows="5" placeholder='Ej: {"periodo": "2025Q4", "ingresos": 50000}'></textarea>
+
+    <button onclick="enviar()">Enviar</button>
+
+    <h3>Respuesta:</h3>
+    <pre id="resultado">---</pre>
+  </div>
+
+  <script>
+    async function enviar() {
+      const url = "http://localhost:8000/api/impuestos";
+
+      const numero_impuesto = document.getElementById("numero_impuesto").value;
+      const cif_empresa = document.getElementById("cif_empresa").value;
+      const nif_cliente = document.getElementById("nif_cliente").value;
+      const datosTexto = document.getElementById("datos").value;
+
+      let datos;
+      try {
+        datos = JSON.parse(datosTexto);
+      } catch (error) {
+        document.getElementById("resultado").textContent = "⚠️ Error: Los datos no son JSON válido.";
+        return;
+      }
+
+      const payload = {
+        numero_impuesto,
+        cif_empresa,
+        nif_cliente,
+        datos
+      };
+
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const resultado = await res.json();
+        document.getElementById("resultado").textContent = JSON.stringify(resultado, null, 2);
+      } catch (err) {
+        document.getElementById("resultado").textContent = "❌ Error al enviar los datos: " + err;
+      }
+    }
+  </script>
+
+</body>
+</html>
