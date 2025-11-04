@@ -29,7 +29,6 @@
     <h1>Modelo 411 — ONLINE</h1>
 
     <form id="form411" novalidate>
-      <!-- Identificación -->
       <div class="section">
         <h2>Identificación</h2>
         <div class="field-group">
@@ -62,7 +61,6 @@
         </div>
       </div>
 
-      <!-- Ingreso y territorio -->
       <div class="section">
         <h2>Ingreso y Territorio</h2>
         <div class="field-group">
@@ -101,12 +99,8 @@
         </div>
       </div>
 
-      <!-- Campos ocultos calculados (actívalos si existen en tu modelo) -->
-      <!--
       <input type="hidden" id="cuota" name="cuota_tributaria" />
       <input type="hidden" id="importe_ingresar" name="importe_ingresar" />
-      -->
-
       <button type="submit">Enviar</button>
       <div id="msg" aria-live="polite"></div>
     </form>
@@ -130,8 +124,8 @@
         const base = parseFloat(baseEl.value) || 0;
         const cuota = base * tipo;
         // Si decides enviar estos campos, descomenta y añade inputs ocultos:
-        // document.getElementById("cuota").value = cuota.toFixed(2);
-        // document.getElementById("importe_ingresar").value = cuota.toFixed(2);
+         document.getElementById("cuota").value = cuota.toFixed(2);
+         document.getElementById("importe_ingresar").value = cuota.toFixed(2);
       }
 
       baseEl.addEventListener("input", recalcular);
@@ -160,10 +154,12 @@
           "año": anio,          // tu modelo usa "año" (Char)
           cif,
           base_imponible,
-          territorio
+          // ================== INICIO DE LA CORRECCIÓN 2 (JS) ==================
+          territorio, // <-- SE AÑADIÓ LA COMA
+          // =================== FIN DE LA CORRECCIÓN 2 (JS) ===================
           // Si tu modelo tiene estos campos, descoméntalos y añade inputs ocultos arriba:
-          // cuota_tributaria: (document.getElementById("cuota").value || "0").toString(),
-          // importe_ingresar: (document.getElementById("importe_ingresar").value || "0").toString()
+           cuota_tributaria: (document.getElementById("cuota").value || "0").toString(),
+           importe_ingresar: (document.getElementById("importe_ingresar").value || "0").toString()
         };
 
         try {
