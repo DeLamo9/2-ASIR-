@@ -5,7 +5,7 @@ Crear  trigger
 CREATE OR REPLACE FUNCTION imp411.fn_capture_formulario411()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO imp411.impuesto_outbox_raw (cif_empresa, nif_cliente, numero_impuesto, datos)
+  INSERT INTO imp411.impuesto_outbox_raw (cif_empresa, nif_cliente, numero_impuesto, total_a_recaudar, datos)
   VALUES (
     NEW.cif,
     NEW.nif,
@@ -26,3 +26,4 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
