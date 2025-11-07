@@ -1,29 +1,52 @@
-docker compose exec -it db psql -U proyecto -d proyecto
-
-Crear  trigger
-
 CREATE OR REPLACE FUNCTION imp411.fn_capture_formulario411()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
 BEGIN
-  INSERT INTO imp411.impuesto_outbox_raw (cif_empresa, nif_cliente, numero_impuesto, total_a_recaudar, datos)
-  VALUES (
-    NEW.cif,
-    NEW.nif,
-    411,
-    jsonb_build_object(
-      'id', NEW.id,
-      'nif', NEW.nif,
-      'iban', NEW.iban,
-      'cif', NEW.cif,
-      'año', NEW."año",
-      'base_imponible', NEW.base_imponible,
-      'cuota_tributaria', NEW.cuota_tributaria,
-      'importe_ingresar', NEW.importe_ingresar,
-      'territorio', NEW.territorio,
-      'fecha_creacion', NEW.fecha_creacion
-    )
-  );
+  INSERT INTO imp411.impuesto_outbox_raw
+    (cif_empresa, nif_cliente, numero_impuesto, total_a_recaudar, datos)
+  VALUES
+    (
+      NEW.cif,
+      NEW.nif,
+      '411',                               -- como TEXT
+      COALESCE(NEW.cuota_tributaria, 0),   -- total_a_recaudar fuera del JSON
+      jsonb_build_object(
+        'id',               NEW.id,
+        'nif',              NEW.nif,
+        'iban',             NEW.iban,
+        'cif',              NEW.cif,
+        'año',              NEW."año",      -- ← con ñ y comillas
+        'base_imponible',   NEW.base_imponible,
+        'cuota_tributaria', NEW.cuota_tributaria,
+        'importe_ingresar', NEW.importe_ingresar,
+        'territorio',       NEW.territorio,
+        'fecha_creacion',   NEW.fecha_creacion
+      )
+    );
+
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
+
+
+DROP TRIGGER IF EXISTS tr_capture_formularioALTER TABLE imp411.impuesto_outbox_raw
+  ALTER COLUMN numero_impuesto  TYPE TEXT USING numero_impuesto::TEXT,
+  ALTER COLUMN total_a_recaudar TYPE NUMERIC(12,2) USING total_a_recaudar::NUMERIC;
+411 ON public."Impuesto_411_formulario411";
+
+CREATE TRIGGER tr_capture_formulario411
+AFTER INSERT OR UPDATE ON public."Impuesto_411_formulario411"
+FOR EACH ROW
+EXECUTE FUNCTION imp411.fn_capture_formulario411(INSERT INTO public."Impuesto_411_formulario411"
+  (nif, iban, "año", base_imponible, cuota_tributaria, importe_ingresar, cif, territorio, fecha_creacion)
+VALUES
+  ('12345678Z','ES1122334455667788990011', 2024, 100.00, 15.00, 15.00, 'B12345678','Castilla y León', now());
+
+SELECT id, cif_empresa, nif_cliente, numero_impuesto, total_a_recaudar, datos
+FROM imp411.impuesto_outbox_raw
+ORDER BY id DESC
+LIMIT 1;
+);
+
 
