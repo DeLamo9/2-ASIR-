@@ -1,9 +1,8 @@
 import os
 import mysql.connector
-from fastapi import FastAPI
-from pydantic import BaseModel
+import xmltodict
+from fastapi import FastAPI, Request, Response
 from datetime import date
-import json
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -28,35 +27,45 @@ def startup_event():
     )
     print("Conectado a MySQL")
 
-class Impuesto(BaseModel):
-    numero_impuesto: str
-    cif_empresa: str
-    nif_cliente: str
-    total_a_recaudar: float
-    datos: dict
-
-@app.post("/api/impuestos")
-def crear_impuesto(impuesto: Impuesto):
+@app.post("/api/impuestos", response_class=Response)
+async def crear_impuesto(request: Request):
     global conn
     cur = conn.cursor()
+
+    body = await request.body()
+    try:
+        data_dict = xmltodict.parse(body)
+        impuesto = data_dict.get("Impuesto", {})
+    except Exception as e:
+        return Response(
+            content=f"<error>XML invalido: {str(e)}</error>",
+            media_type="application/xml",
+            status_code=400
+        )
+
+    numero_impuesto = impuesto.get("numero_impuesto")
+    cif_empresa = impuesto.get("cif_empresa")
+    nif_cliente = impuesto.get("nif_cliente")
+    total_a_recaudar = float(impuesto.get("total_a_recaudar", 0))
+    datos = impuesto.get("datos", {})
 
     query = """
         INSERT INTO impuestos (numero_impuesto, cif_empresa, nif_cliente, total_a_recaudar, datos)
         VALUES (%s, %s, %s, %s, %s)
     """
-
-    values = (
-        impuesto.numero_impuesto,
-        impuesto.cif_empresa,
-        impuesto.nif_cliente,
-        impuesto.total_a_recaudar,
-        json.dumps(impuesto.datos)
-    )
-
+    values = (numero_impuesto, cif_empresa, nif_cliente, total_a_recaudar, str(datos))
     cur.execute(query, values)
     conn.commit()
     cur.close()
 
-    return {"status": "ok", "mensaje": "Impuesto registrado correctamente"}
+    response_xml = f"""
+    <respuesta>
+        <status>ok</status>
+        <mensaje>Impuesto registrado correctamente</mensaje>
+        <numero_impuesto>{numero_impuesto}</numero_impuesto>
+    </respuesta>
+    """
+    
+    return Response(content=response_xml.strip(), media_type="application/xml")
 
 # http://localhost:8000/api/impuestos
