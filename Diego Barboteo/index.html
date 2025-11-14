@@ -92,41 +92,43 @@
       const numero_impuesto = document.getElementById("numero_impuesto").value;
       const cif_empresa = document.getElementById("cif_empresa").value;
       const nif_cliente = document.getElementById("nif_cliente").value;
-      const total_a_recaudar = parseFloat(document.getElementById("total_a_recaudar").value);
+      const total_a_recaudar = document.getElementById("total_a_recaudar").value;
       const datosTexto = document.getElementById("datos").value;
 
-      if (isNaN(total_a_recaudar)) {
-        document.getElementById("resultado").textContent = "⚠️ Error: El campo 'Total a recaudar' debe ser un número válido.";
-        return;
-      }
-
-      let datos;
+      let datosObj;
       try {
-        datos = JSON.parse(datosTexto);
-      } catch (error) {
-        document.getElementById("resultado").textContent = "⚠️ Error: Los datos no son JSON válido.";
+        datosObj = JSON.parse(datosTexto);
+      } catch (e) {
+        document.getElementById("resultado").textContent = "Datos no son JSON válido.";
         return;
       }
 
-      const payload = {
-        numero_impuesto,
-        cif_empresa,
-        nif_cliente,
-        total_a_recaudar,
-        datos
-      };
+      let datosXML = "";
+      for (const key in datosObj) {
+        datosXML += `<${key}>${datosObj[key]}</${key}>`;
+      }
+
+      const xml = `
+      <Impuesto>
+        <numero_impuesto>${numero_impuesto}</numero_impuesto>
+        <cif_empresa>${cif_empresa}</cif_empresa>
+        <nif_cliente>${nif_cliente}</nif_cliente>
+        <total_a_recaudar>${total_a_recaudar}</total_a_recaudar>
+        <datos>${datosXML}</datos>
+      </Impuesto>`.trim();
 
       try {
         const res = await fetch(url, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+          headers: { "Content-Type": "application/xml" },
+          body: xml
         });
 
-        const resultado = await res.json();
-        document.getElementById("resultado").textContent = JSON.stringify(resultado, null, 2);
+        const texto = await res.text();
+        document.getElementById("resultado").textContent = texto;
+
       } catch (err) {
-        document.getElementById("resultado").textContent = "❌ Error al enviar los datos: " + err;
+        document.getElementById("resultado").textContent = "❌ Error al enviar: " + err;
       }
     }
   </script>
