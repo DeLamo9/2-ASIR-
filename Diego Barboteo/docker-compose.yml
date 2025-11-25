@@ -3,7 +3,7 @@ version: "3.9"
 services:
   db:
     image: mysql:8.0
-    container_name: mysql_db
+    container_name: mysql_db_xml
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
@@ -17,7 +17,7 @@ services:
 
   api:
     build: .
-    container_name: fastapi_app_v
+    container_name: fastapi_app_xml
     restart: always
     depends_on:
       - db
