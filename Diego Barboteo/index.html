@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,30 +14,36 @@
       align-items: center;
       height: 100vh;
     }
+
     .container {
       background: white;
       padding: 30px;
       border-radius: 16px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
       width: 400px;
     }
+
     h2 {
       text-align: center;
       margin-bottom: 20px;
       color: #333;
     }
+
     label {
       font-weight: 600;
       margin-top: 10px;
       display: block;
     }
-    input, textarea {
+
+    input,
+    textarea {
       width: 100%;
       padding: 8px;
       margin-top: 5px;
       border: 1px solid #ccc;
       border-radius: 8px;
     }
+
     button {
       margin-top: 15px;
       width: 100%;
@@ -48,9 +55,11 @@
       cursor: pointer;
       font-size: 16px;
     }
+
     button:hover {
       background-color: #005fa3;
     }
+
     pre {
       background: #f1f1f1;
       padding: 10px;
@@ -59,6 +68,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <div class="container">
@@ -76,8 +86,9 @@
     <label>Total a recaudar (€)</label>
     <input type="number" id="total_a_recaudar" placeholder="Ej: 1250.75" step="0.01" required>
 
-    <label>Datos (JSON)</label>
-    <textarea id="datos" rows="5" placeholder='Ej: {"periodo": "2025Q4", "ingresos": 50000}'></textarea>
+    <label>Datos (XML)</label>
+    <textarea id="datos" rows="7" placeholder='<periodo>2025Q4</periodo>
+<ingresos>50000</ingresos>'></textarea>
 
     <button onclick="enviar()">Enviar</button>
 
@@ -93,20 +104,7 @@
       const cif_empresa = document.getElementById("cif_empresa").value;
       const nif_cliente = document.getElementById("nif_cliente").value;
       const total_a_recaudar = document.getElementById("total_a_recaudar").value;
-      const datosTexto = document.getElementById("datos").value;
-
-      let datosObj;
-      try {
-        datosObj = JSON.parse(datosTexto);
-      } catch (e) {
-        document.getElementById("resultado").textContent = "Datos no son JSON válido.";
-        return;
-      }
-
-      let datosXML = "";
-      for (const key in datosObj) {
-        datosXML += `<${key}>${datosObj[key]}</${key}>`;
-      }
+      const datosXML = document.getElementById("datos").value.trim();
 
       const xml = `
       <Impuesto>
@@ -132,6 +130,6 @@
       }
     }
   </script>
-
 </body>
+
 </html>
